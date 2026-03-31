@@ -1,0 +1,23 @@
+export enum MembershipCategory {
+  PRO_TEAM = 'PRO_TEAM',
+  AMATEUR_TEAM = 'AMATEUR_TEAM',
+  COMMUNITY_PLAYER = 'COMMUNITY_PLAYER',
+}
+
+export enum MembershipStatus {
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  EXPIRED = 'EXPIRED',
+  INACTIVE = 'INACTIVE',
+}
+
+export enum PaymentPlan {
+  PAY_PER_SESSION = 'PAY_PER_SESSION',
+  DAILY = 'DAILY',
+  WEEKLY = 'WEEKLY',
+  MONTHLY = 'MONTHLY',
+  QUARTERLY = 'QUARTERLY',
+  BI_ANNUALLY = 'BI_ANNUALLY',
+  ANNUALLY = 'ANNUALLY',
+}
+

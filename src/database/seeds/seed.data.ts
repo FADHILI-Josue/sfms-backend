@@ -1,0 +1,90 @@
+export const permissionKeys = [
+  'users.read',
+  'users.create',
+  'users.update',
+  'users.delete',
+
+  'roles.read',
+  'roles.create',
+  'roles.update',
+  'roles.delete',
+
+  'permissions.read',
+  'permissions.create',
+
+  'facilities.read',
+  'facilities.create',
+  'facilities.update',
+  'facilities.delete',
+
+  'memberships.read',
+  'memberships.create',
+  'memberships.update',
+  'memberships.delete',
+
+  'bookings.read',
+  'bookings.create',
+  'bookings.update',
+  'bookings.delete',
+
+  'payments.read',
+  'payments.create',
+  'payments.update',
+  'payments.delete',
+
+  'audit.read',
+  'analytics.read',
+] as const;
+
+export const systemRoles = [
+  {
+    name: 'SUPER_ADMIN',
+    description: 'Full system access.',
+    permissionKeys: permissionKeys as readonly string[],
+  },
+  {
+    name: 'FACILITY_ADMIN',
+    description: 'Manage facilities and bookings.',
+    permissionKeys: [
+      'facilities.read',
+      'facilities.create',
+      'facilities.update',
+      'bookings.read',
+      'bookings.create',
+      'bookings.update',
+      'memberships.read',
+      'analytics.read',
+    ],
+  },
+  {
+    name: 'FINANCE_OFFICER',
+    description: 'Manage payments and reports.',
+    permissionKeys: ['payments.read', 'payments.create', 'payments.update', 'analytics.read', 'audit.read'],
+  },
+  {
+    name: 'OPERATIONS_MANAGER',
+    description: 'Operations oversight for schedules and facilities.',
+    permissionKeys: [
+      'facilities.read',
+      'facilities.update',
+      'bookings.read',
+      'bookings.create',
+      'bookings.update',
+      'memberships.read',
+      'memberships.update',
+      'analytics.read',
+      'audit.read',
+    ],
+  },
+  {
+    name: 'COACH_TEAM_MANAGER',
+    description: 'Manage team bookings and view members.',
+    permissionKeys: ['bookings.read', 'bookings.create', 'bookings.update', 'memberships.read'],
+  },
+  {
+    name: 'COMMUNITY_PLAYER',
+    description: 'Basic access.',
+    permissionKeys: ['bookings.read'],
+  },
+] as const;
+
