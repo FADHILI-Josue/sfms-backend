@@ -16,6 +16,19 @@ export const permissionKeys = [
   'facilities.create',
   'facilities.update',
   'facilities.delete',
+  'facilities.approve',
+
+  'courts.read',
+  'courts.create',
+  'courts.update',
+  'courts.delete',
+
+  'facilityStaff.read',
+  'facilityStaff.create',
+  'facilityStaff.delete',
+
+  'facilityApplications.read',
+  'facilityApplications.approve',
 
   'memberships.read',
   'memberships.create',
@@ -43,12 +56,39 @@ export const systemRoles = [
     permissionKeys: permissionKeys as readonly string[],
   },
   {
-    name: 'FACILITY_ADMIN',
-    description: 'Manage facilities and bookings.',
+    name: 'FACILITY_OWNER',
+    description: 'Owns facilities and manages staff and courts within owned facilities.',
     permissionKeys: [
       'facilities.read',
       'facilities.create',
       'facilities.update',
+      'courts.read',
+      'courts.create',
+      'courts.update',
+      'facilityStaff.read',
+      'facilityStaff.create',
+      'facilityStaff.delete',
+      'bookings.read',
+      'bookings.create',
+      'bookings.update',
+      'memberships.read',
+      'memberships.create',
+      'memberships.update',
+      'payments.read',
+      'payments.create',
+      'payments.update',
+      'analytics.read',
+    ],
+  },
+  {
+    name: 'FACILITY_ADMIN',
+    description: 'Manage facilities and bookings.',
+    permissionKeys: [
+      'facilities.read',
+      'facilities.update',
+      'courts.read',
+      'courts.create',
+      'courts.update',
       'bookings.read',
       'bookings.create',
       'bookings.update',
@@ -87,4 +127,3 @@ export const systemRoles = [
     permissionKeys: ['bookings.read'],
   },
 ] as const;
-

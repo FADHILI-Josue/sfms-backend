@@ -22,6 +22,7 @@ import { BookingsModule } from './modules/bookings/bookings.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { FacilityApplicationsModule } from './modules/facility-applications/facility-applications.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 
@@ -76,6 +77,7 @@ import { PermissionsGuard } from './common/guards/permissions.guard';
     PaymentsModule,
     AuditLogsModule,
     AnalyticsModule,
+    FacilityApplicationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

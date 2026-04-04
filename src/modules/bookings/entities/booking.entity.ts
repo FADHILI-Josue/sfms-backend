@@ -1,6 +1,7 @@
 import { Column, Entity, Index, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
+import { CourtEntity } from '../../facilities/entities/court.entity';
 import { FacilityEntity } from '../../facilities/entities/facility.entity';
 import { MemberEntity } from '../../memberships/entities/member.entity';
 import { BookingStatus, BookingType, Recurrence } from '../booking.enums';
@@ -16,6 +17,16 @@ export class BookingEntity extends BaseEntity {
   @Column({ type: 'uuid' })
   @Index()
   facilityId!: string;
+
+  @ManyToOne(() => CourtEntity, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  court!: CourtEntity | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  @Index()
+  courtId!: string | null;
 
   @ManyToOne(() => MemberEntity, {
     nullable: false,

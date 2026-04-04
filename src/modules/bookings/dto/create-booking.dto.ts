@@ -9,6 +9,11 @@ export class CreateBookingDto {
   @IsUUID('4')
   facilityId!: string;
 
+  @ApiPropertyOptional({ description: 'Optional court id within the facility.' })
+  @IsOptional()
+  @IsUUID('4')
+  courtId?: string;
+
   @ApiProperty({ description: 'Member/team id' })
   @IsUUID('4')
   memberId!: string;
@@ -41,4 +46,3 @@ export class CreateBookingDto {
   @Length(0, 240)
   notes?: string;
 }
-

@@ -1,7 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
+import type { AuthUser } from '../auth/types/auth-user.type';
+import { FacilityAccessService } from '../facilities/facility-access.service';
 import { FacilityEntity } from '../facilities/entities/facility.entity';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
@@ -12,22 +14,46 @@ export class MembershipsService {
   constructor(
     @InjectRepository(MemberEntity) private readonly members: Repository<MemberEntity>,
     @InjectRepository(FacilityEntity) private readonly facilities: Repository<FacilityEntity>,
+    private readonly access: FacilityAccessService,
   ) {}
 
-  list() {
-    return this.members.find({ order: { createdAt: 'DESC' } });
+  async list(user: AuthUser) {
+    if (this.access.isSuperAdmin(user)) {
+      return this.members.find({ order: { createdAt: 'DESC' }, relations: { facility: true } as any, take: 500 });
+    }
+
+    const scope = await this.access.getScope(user);
+    if (scope.facilityIds.length === 0) return [];
+
+    return this.members.find({
+      where: { facilityId: In(scope.facilityIds) },
+      order: { createdAt: 'DESC' },
+      relations: { facility: true } as any,
+      take: 500,
+    });
   }
 
-  async get(id: string) {
-    const member = await this.members.findOne({ where: { id } });
+  async get(user: AuthUser, id: string) {
+    const member = await this.members.findOne({ where: { id }, relations: { facility: true } as any });
     if (!member) throw new NotFoundException('Member not found.');
+
+    if (!this.access.isSuperAdmin(user)) {
+      if (!member.facilityId) throw new NotFoundException('Member not found.');
+      const scope = await this.access.getScope(user);
+      if (!scope.facilityIds.includes(member.facilityId)) throw new NotFoundException('Member not found.');
+    }
+
     return member;
   }
 
-  async create(dto: CreateMemberDto) {
+  async create(user: AuthUser, dto: CreateMemberDto) {
     if (dto.facilityId) {
       const exists = await this.facilities.exist({ where: { id: dto.facilityId } });
       if (!exists) throw new BadRequestException('Facility not found.');
+      if (!this.access.isSuperAdmin(user)) {
+        const visible = await this.access.assertFacilityIdsVisible(user, [dto.facilityId]);
+        if (!visible) throw new BadRequestException('Facility not found.');
+      }
     }
 
     const member = this.members.create({
@@ -45,12 +71,16 @@ export class MembershipsService {
     return this.members.save(member);
   }
 
-  async update(id: string, dto: UpdateMemberDto) {
-    const member = await this.get(id);
+  async update(user: AuthUser, id: string, dto: UpdateMemberDto) {
+    const member = await this.get(user, id);
 
     if (dto.facilityId !== undefined && dto.facilityId) {
       const exists = await this.facilities.exist({ where: { id: dto.facilityId } });
       if (!exists) throw new BadRequestException('Facility not found.');
+      if (!this.access.isSuperAdmin(user)) {
+        const visible = await this.access.assertFacilityIdsVisible(user, [dto.facilityId]);
+        if (!visible) throw new BadRequestException('Facility not found.');
+      }
     }
 
     if (dto.name !== undefined) member.name = dto.name;
@@ -66,10 +96,9 @@ export class MembershipsService {
     return this.members.save(member);
   }
 
-  async delete(id: string) {
-    await this.get(id);
+  async delete(user: AuthUser, id: string) {
+    await this.get(user, id);
     await this.members.delete({ id });
     return { ok: true };
   }
 }
-

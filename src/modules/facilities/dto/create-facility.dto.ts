@@ -4,13 +4,15 @@ import {
   IsArray,
   IsEnum,
   IsInt,
+  IsObject,
   IsOptional,
   IsString,
   Length,
   Min,
+  ArrayUnique,
 } from 'class-validator';
 
-import { FacilityStatus, FacilityType } from '../facility.enums';
+import { FacilitySport, FacilityStatus, FacilityType } from '../facility.enums';
 
 export class CreateFacilityDto {
   @ApiProperty()
@@ -22,10 +24,20 @@ export class CreateFacilityDto {
   @IsEnum(FacilityType)
   type!: FacilityType;
 
+  @ApiPropertyOptional({ enum: FacilitySport, isArray: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsEnum(FacilitySport, { each: true })
+  supportedSports?: string[];
+
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
-  supportedSports?: string[];
+  @ArrayUnique()
+  @IsString({ each: true })
+  @Length(1, 80, { each: true })
+  amenities?: string[];
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -63,5 +75,13 @@ export class CreateFacilityDto {
   @IsInt()
   @Min(0)
   offPeakRateCents?: number;
-}
 
+  @ApiPropertyOptional({
+    type: 'object',
+    additionalProperties: true,
+    description: 'Free-form facility metadata (address, amenities, etc).',
+  })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown>;
+}

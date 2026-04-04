@@ -11,20 +11,32 @@ export function applyAppBootstrap(app: INestApplication) {
   const apiPrefix = config.get<string>('app.apiPrefix', '/api');
   const apiVersion = config.get<string>('app.apiVersion', '1');
   const corsOrigins = config.get<string[]>('app.corsOrigins', []);
+  const isProd = (process.env.NODE_ENV ?? 'development') === 'production';
+
+  const devDefaults = [
+    'http://localhost:5173',
+    'http://localhost:8080',
+    'http://localhost:3000',
+  ];
+  const allowedOrigins = new Set<string>([
+    ...corsOrigins,
+    ...(!isProd ? devDefaults : []),
+  ]);
 
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: apiVersion });
   app.setGlobalPrefix(apiPrefix.replace(/\/$/, ''));
 
   app.enableCors({
-    origin:
-      corsOrigins.length === 0
-        ? true
-        : (origin, callback) => {
-            if (!origin) return callback(null, true);
-            if (corsOrigins.includes(origin)) return callback(null, true);
-            return callback(new Error('CORS origin not allowed.'), false);
-          },
+    origin: (origin, callback) => {
+      // Allow non-browser clients (no Origin header)
+      if (!origin) return callback(null, true);
+      if (corsOrigins.length === 0 && !isProd) return callback(null, true);
+      if (allowedOrigins.has(origin)) return callback(null, true);
+      return callback(new Error('CORS origin not allowed.'), false);
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   app.use(helmet());
