@@ -6,9 +6,13 @@ import { CourtEntity } from '../facilities/entities/court.entity';
 import { FacilityEntity } from '../facilities/entities/facility.entity';
 import { FacilityAccessService } from '../facilities/facility-access.service';
 import { MemberEntity } from '../memberships/entities/member.entity';
+import { PaymentEntity } from '../payments/entities/payment.entity';
+import { PaymentMethod, PaymentStatus } from '../payments/payment.enums';
+import { MembershipCategory, MembershipStatus, PaymentPlan } from '../memberships/membership.enums';
 import { BookingEntity } from './entities/booking.entity';
 import { BookingStatus } from './booking.enums';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { CreatePublicBookingDto } from './dto/create-public-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import type { AuthUser } from '../auth/types/auth-user.type';
 
@@ -19,6 +23,7 @@ export class BookingsService {
     @InjectRepository(FacilityEntity) private readonly facilities: Repository<FacilityEntity>,
     @InjectRepository(CourtEntity) private readonly courts: Repository<CourtEntity>,
     @InjectRepository(MemberEntity) private readonly members: Repository<MemberEntity>,
+    @InjectRepository(PaymentEntity) private readonly payments: Repository<PaymentEntity>,
     private readonly access: FacilityAccessService,
   ) {}
 
@@ -102,6 +107,57 @@ export class BookingsService {
     });
 
     return this.bookings.save(booking);
+  }
+
+  async createPublic(dto: CreatePublicBookingDto) {
+    const facilityOk = await this.facilities.exist({ where: { id: dto.facilityId } });
+    if (!facilityOk) throw new BadRequestException('Facility not found.');
+
+    if (dto.courtId) {
+      const courtOk = await this.courts.exist({ where: { id: dto.courtId, facilityId: dto.facilityId, isActive: true } });
+      if (!courtOk) throw new BadRequestException('Court not found.');
+    }
+
+    this.assertValidInterval(dto.startAt, dto.endAt);
+    await this.assertNoConflict(
+      { facilityId: dto.facilityId, courtId: dto.courtId ?? null },
+      dto.startAt,
+      dto.endAt,
+    );
+
+    const guestMember = this.members.create({
+      name: dto.guestName,
+      category: MembershipCategory.COMMUNITY_PLAYER,
+      sport: 'Booking',
+      status: MembershipStatus.ACTIVE,
+      plan: PaymentPlan.MONTHLY,
+    });
+    const savedMember = await this.members.save(guestMember);
+
+    const booking = this.bookings.create({
+      facilityId: dto.facilityId,
+      courtId: dto.courtId ?? null,
+      memberId: savedMember.id,
+      type: dto.type,
+      status: BookingStatus.CONFIRMED,
+      startAt: dto.startAt,
+      endAt: dto.endAt,
+      notes: dto.notes ?? null,
+    });
+    const savedBooking = await this.bookings.save(booking);
+
+    const payment = this.payments.create({
+      memberId: savedMember.id,
+      amountDueCents: dto.amountCents,
+      amountPaidCents: dto.amountCents,
+      method: dto.paymentMethod === 'MOBILE' ? PaymentMethod.MOBILE_MONEY : PaymentMethod.CARD,
+      status: PaymentStatus.PAID,
+      paidAt: new Date(),
+      reference: 'PUB-' + Math.random().toString(36).substring(7).toUpperCase(),
+    });
+    await this.payments.save(payment);
+
+    return savedBooking;
   }
 
   async update(user: AuthUser, id: string, dto: UpdateBookingDto) {

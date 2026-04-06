@@ -13,6 +13,7 @@ export const demoUserDefs = [
   { email: 'ops@sfms.io', password: 'ops123', fullName: 'Operations Manager', roleName: 'OPERATIONS_MANAGER' },
   { email: 'coach@sfms.io', password: 'coach123', fullName: 'Coach Williams', roleName: 'COACH_TEAM_MANAGER' },
   { email: 'player@sfms.io', password: 'player123', fullName: 'James Okoro', roleName: 'COMMUNITY_PLAYER' },
+  { email: 'provider@sfms.io', password: 'provider123', fullName: 'Grace Mwangi', roleName: 'SERVICE_PROVIDER' },
 ] as const;
 
 export async function seedDemoUsers(opts: {

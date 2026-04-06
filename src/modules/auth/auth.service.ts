@@ -2,24 +2,84 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { FacilityEntity } from '../facilities/entities/facility.entity';
 import { FacilityStaffEntity } from '../facilities/entities/facility-staff.entity';
 import { UserEntity } from '../users/entities/user.entity';
+import { RoleEntity } from '../access-control/entities/role.entity';
 import type { JwtPayload } from './types/jwt-payload.type';
 import { LoginDto } from './dto/login.dto';
+import { RegisterFacilityDto } from './dto/register-facility.dto';
 import { hashSecret, verifySecret } from '../../common/security/password-hasher';
+import { FacilityApprovalStatus, FacilityStatus, FacilityType } from '../facilities/facility.enums';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly config: ConfigService,
     private readonly jwt: JwtService,
+    private readonly dataSource: DataSource,
     @InjectRepository(UserEntity) private readonly users: Repository<UserEntity>,
     @InjectRepository(FacilityEntity) private readonly facilities: Repository<FacilityEntity>,
     @InjectRepository(FacilityStaffEntity) private readonly staff: Repository<FacilityStaffEntity>,
+    @InjectRepository(RoleEntity) private readonly roles: Repository<RoleEntity>,
   ) {}
+
+  async registerFacility(dto: RegisterFacilityDto) {
+    const existingUser = await this.users.findOne({ where: { email: dto.email.toLowerCase() } });
+    if (existingUser) {
+      throw new Error('Email is already registered.');
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const ownerRole = await queryRunner.manager.findOne(RoleEntity, { where: { name: 'FACILITY_OWNER' } });
+      if (!ownerRole) throw new Error('Role FACILITY_OWNER not found.');
+
+      const user = queryRunner.manager.create(UserEntity, {
+        email: dto.email.toLowerCase(),
+        fullName: `${dto.firstName} ${dto.lastName}`,
+        passwordHash: await hashSecret(dto.password),
+        roles: [ownerRole],
+      });
+      const savedUser = await queryRunner.manager.save(user);
+
+      const facility = queryRunner.manager.create(FacilityEntity, {
+        name: dto.facilityName,
+        type: dto.facilityType === 'Indoor Arena' ? FacilityType.INDOOR : FacilityType.OUTDOOR,
+        supportedSports: dto.sportTypes,
+        amenities: dto.amenities ?? [],
+        owner: savedUser,
+        ownerId: savedUser.id,
+        approvalStatus: FacilityApprovalStatus.PENDING,
+        status: FacilityStatus.AVAILABLE,
+        metadata: {
+          location: dto.location,
+          city: dto.city,
+          zipCode: dto.zipCode,
+        },
+      });
+      await queryRunner.manager.save(facility);
+
+      await queryRunner.commitTransaction();
+
+      const reloadedUser = await this.users.findOne({
+        where: { id: savedUser.id },
+        relations: { roles: { permissions: true } } as any,
+      });
+
+      return this.issueTokens(reloadedUser!);
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+  }
 
   async login(dto: LoginDto) {
     const user = await this.users.findOne({

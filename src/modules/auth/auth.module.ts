@@ -6,13 +6,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { FacilityEntity } from '../facilities/entities/facility.entity';
 import { FacilityStaffEntity } from '../facilities/entities/facility-staff.entity';
 import { UserEntity } from '../users/entities/user.entity';
+import { RoleEntity } from '../access-control/entities/role.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, FacilityEntity, FacilityStaffEntity]),
+    TypeOrmModule.forFeature([UserEntity, FacilityEntity, FacilityStaffEntity, RoleEntity]),
     PassportModule,
     JwtModule.register({}),
   ],

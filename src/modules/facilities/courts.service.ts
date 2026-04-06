@@ -26,6 +26,10 @@ export class CourtsService {
     return this.courts.find({ where: { facilityId }, order: { name: 'ASC' } });
   }
 
+  async listPublicForFacility(facilityId: string) {
+    return this.courts.find({ where: { facilityId, isActive: true }, order: { name: 'ASC' } });
+  }
+
   async create(user: AuthUser, facilityId: string, dto: CreateCourtDto) {
     if (!this.access.isSuperAdmin(user)) {
       const visible = await this.access.assertFacilityIdsVisible(user, [facilityId]);
@@ -40,6 +44,11 @@ export class CourtsService {
       name: dto.name,
       supportedSports: dto.supportedSports ?? [],
       isActive: dto.isActive ?? true,
+      dimensions: dto.dimensions ?? null,
+      maxCapacity: dto.maxCapacity ?? null,
+      peakRateCents: dto.peakRateCents ?? null,
+      offPeakRateCents: dto.offPeakRateCents ?? null,
+      mainImage: dto.mainImage ?? null,
       metadata: dto.metadata ?? null,
     });
     return this.courts.save(court);
@@ -61,6 +70,11 @@ export class CourtsService {
     if (dto.name !== undefined) court.name = dto.name;
     if (dto.supportedSports !== undefined) court.supportedSports = dto.supportedSports;
     if (dto.isActive !== undefined) court.isActive = dto.isActive;
+    if (dto.dimensions !== undefined) court.dimensions = dto.dimensions ?? null;
+    if (dto.maxCapacity !== undefined) court.maxCapacity = dto.maxCapacity ?? null;
+    if (dto.peakRateCents !== undefined) court.peakRateCents = dto.peakRateCents ?? null;
+    if (dto.offPeakRateCents !== undefined) court.offPeakRateCents = dto.offPeakRateCents ?? null;
+    if (dto.mainImage !== undefined) court.mainImage = dto.mainImage ?? null;
     if (dto.metadata !== undefined) court.metadata = dto.metadata ?? null;
 
     return this.courts.save(court);

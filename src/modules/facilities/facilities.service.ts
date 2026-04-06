@@ -81,6 +81,7 @@ export class FacilitiesService {
       nextMaintenanceAt: dto.nextMaintenanceAt ?? null,
       peakRateCents: dto.peakRateCents ?? null,
       offPeakRateCents: dto.offPeakRateCents ?? null,
+      mainImage: dto.mainImage ?? null,
       metadata: this.sanitizeMetadata(dto.metadata),
     });
 
@@ -102,6 +103,7 @@ export class FacilitiesService {
     if (dto.nextMaintenanceAt !== undefined) facility.nextMaintenanceAt = dto.nextMaintenanceAt ?? null;
     if (dto.peakRateCents !== undefined) facility.peakRateCents = dto.peakRateCents ?? null;
     if (dto.offPeakRateCents !== undefined) facility.offPeakRateCents = dto.offPeakRateCents ?? null;
+    if (dto.mainImage !== undefined) facility.mainImage = dto.mainImage ?? null;
     if (dto.metadata !== undefined) facility.metadata = this.sanitizeMetadata(dto.metadata);
 
     return this.facilities.save(facility);

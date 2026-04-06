@@ -126,4 +126,9 @@ export const systemRoles = [
     description: 'Basic access.',
     permissionKeys: ['bookings.read'],
   },
+  {
+    name: 'SERVICE_PROVIDER',
+    description: 'External service provider.',
+    permissionKeys: ['bookings.read', 'facilities.read'],
+  },
 ] as const;

@@ -9,8 +9,8 @@ import type { AuthUser } from './types/auth-user.type';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { AuthService } from './auth.service';
+import { RegisterFacilityDto } from './dto/register-facility.dto';
 import { getCookieValue } from '../../common/security/cookie-utils';
-
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
@@ -45,6 +45,15 @@ export class AuthController {
   private clearAuthCookies(res: Response) {
     res.clearCookie('accessToken', { path: '/' });
     res.clearCookie('refreshToken', { path: '/' });
+  }
+
+  @Public()
+  @Post('register-facility')
+  @ApiOkResponse({ description: 'Registers a facility and owner user.' })
+  async registerFacility(@Res({ passthrough: true }) res: Response, @Body() dto: RegisterFacilityDto) {
+    const result = await this.auth.registerFacility(dto);
+    this.setAuthCookies(res, { accessToken: result.accessToken, refreshToken: result.refreshToken });
+    return result;
   }
 
   @Public()

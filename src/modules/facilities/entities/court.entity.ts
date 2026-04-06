@@ -22,6 +22,21 @@ export class CourtEntity extends BaseEntity {
   @Column({ type: 'boolean', default: true })
   isActive!: boolean;
 
+  @Column({ type: 'varchar', length: 80, nullable: true })
+  dimensions!: string | null;
+
+  @Column({ type: 'int', nullable: true })
+  maxCapacity!: number | null;
+
+  @Column({ type: 'int', nullable: true })
+  peakRateCents!: number | null;
+
+  @Column({ type: 'int', nullable: true })
+  offPeakRateCents!: number | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  mainImage!: string | null;
+
   @Column({ type: 'simple-json', nullable: true })
   metadata!: Record<string, unknown> | null;
 }

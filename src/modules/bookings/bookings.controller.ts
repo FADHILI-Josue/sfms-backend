@@ -3,7 +3,9 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import type { AuthUser } from '../auth/types/auth-user.type';
+import { CreatePublicBookingDto } from './dto/create-public-booking.dto';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { BookingsService } from './bookings.service';
@@ -42,5 +44,17 @@ export class BookingsController {
   @Permissions('bookings.delete')
   delete(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.bookings.delete(user, id);
+  }
+}
+
+@ApiTags('Public Bookings')
+@Controller({ path: 'public/bookings', version: '1' })
+export class PublicBookingsController {
+  constructor(private readonly bookings: BookingsService) {}
+
+  @Public()
+  @Post()
+  createPublic(@Body() dto: CreatePublicBookingDto) {
+    return this.bookings.createPublic(dto);
   }
 }

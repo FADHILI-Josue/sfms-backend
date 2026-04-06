@@ -64,6 +64,9 @@ export class FacilityEntity extends BaseEntity {
   @Column({ type: 'int', nullable: true })
   offPeakRateCents!: number | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  mainImage!: string | null;
+
   @Column({ type: 'simple-json', nullable: true })
   metadata!: Record<string, unknown> | null;
 

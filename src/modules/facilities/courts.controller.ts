@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import type { AuthUser } from '../auth/types/auth-user.type';
 import { CreateCourtDto } from './dto/create-court.dto';
 import { UpdateCourtDto } from './dto/update-court.dto';
@@ -46,6 +47,18 @@ export class CourtsController {
   @Permissions('courts.delete')
   delete(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.courts.delete(user, id);
+  }
+}
+
+@ApiTags('Public Courts')
+@Controller({ path: 'public/facilities', version: '1' })
+export class PublicCourtsController {
+  constructor(private readonly courts: CourtsService) {}
+
+  @Public()
+  @Get(':facilityId/courts')
+  listForFacility(@Param('facilityId') facilityId: string) {
+    return this.courts.listPublicForFacility(facilityId);
   }
 }
 

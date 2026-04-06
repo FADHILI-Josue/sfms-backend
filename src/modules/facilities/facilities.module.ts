@@ -6,7 +6,7 @@ import { UserEntity } from '../users/entities/user.entity';
 import { FacilityEntity } from './entities/facility.entity';
 import { CourtEntity } from './entities/court.entity';
 import { FacilityStaffEntity } from './entities/facility-staff.entity';
-import { CourtsController } from './courts.controller';
+import { CourtsController, PublicCourtsController } from './courts.controller';
 import { FacilityStaffController } from './facility-staff.controller';
 import { FacilitiesController, PublicFacilitiesController } from './facilities.controller';
 import { FacilitiesService } from './facilities.service';
@@ -24,7 +24,7 @@ import { FacilityStaffService } from './facility-staff.service';
       RoleEntity,
     ]),
   ],
-  controllers: [FacilitiesController, PublicFacilitiesController, CourtsController, FacilityStaffController],
+  controllers: [FacilitiesController, PublicFacilitiesController, CourtsController, PublicCourtsController, FacilityStaffController],
   providers: [FacilitiesService, FacilityAccessService, CourtsService, FacilityStaffService],
   exports: [FacilitiesService, FacilityAccessService],
 })

@@ -9,6 +9,7 @@ import { envValidationOptions, envValidationSchema } from './config/env.validati
 import { appConfig } from './config/app.config';
 import { authConfig } from './config/auth.config';
 import { databaseConfig } from './config/database.config';
+import { mailerConfig } from './config/mailer.config';
 import { swaggerConfig } from './config/swagger.config';
 
 import { DatabaseModule } from './database/database.module';
@@ -23,6 +24,8 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { FacilityApplicationsModule } from './modules/facility-applications/facility-applications.module';
+import { MailerModule } from './modules/mailer/mailer.module';
+import { StorageModule } from './modules/storage/storage.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 
@@ -33,7 +36,7 @@ import { PermissionsGuard } from './common/guards/permissions.guard';
       cache: true,
       validationSchema: envValidationSchema,
       validationOptions: envValidationOptions,
-      load: [appConfig, authConfig, databaseConfig, swaggerConfig],
+      load: [appConfig, authConfig, databaseConfig, swaggerConfig, mailerConfig],
     }),
     LoggerModule.forRoot({
       pinoHttp: {
@@ -78,6 +81,8 @@ import { PermissionsGuard } from './common/guards/permissions.guard';
     AuditLogsModule,
     AnalyticsModule,
     FacilityApplicationsModule,
+    MailerModule,
+    StorageModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

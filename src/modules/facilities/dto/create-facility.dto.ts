@@ -76,6 +76,11 @@ export class CreateFacilityDto {
   @Min(0)
   offPeakRateCents?: number;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  mainImage?: string;
+
   @ApiPropertyOptional({
     type: 'object',
     additionalProperties: true,

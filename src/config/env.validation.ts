@@ -30,6 +30,17 @@ export const envValidationSchema = Joi.object({
   SWAGGER_ENABLED: Joi.boolean().default(false),
   SWAGGER_PATH: Joi.string().default('/docs'),
 
+  MAIL_HOST: Joi.string().allow('').default(''),
+  MAIL_PORT: Joi.number().integer().min(1).max(65535).default(465),
+  MAIL_SECURE: Joi.boolean().default(true),
+  MAIL_USERNAME: Joi.string().allow('').default(''),
+  MAIL_PASSWORD: Joi.string().allow('').default(''),
+  MAIL_FROM_NAME: Joi.string().default('SFMS Care Team'),
+  MAIL_FROM_ADDRESS: Joi.string()
+    .email({ tlds: { allow: false } })
+    .allow('')
+    .default(''),
+
   THROTTLE_TTL_MS: Joi.number().integer().min(1000).default(60_000),
   THROTTLE_LIMIT: Joi.number().integer().min(1).default(120),
 
