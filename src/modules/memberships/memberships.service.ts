@@ -17,16 +17,27 @@ export class MembershipsService {
     private readonly access: FacilityAccessService,
   ) {}
 
-  async list(user: AuthUser) {
+  async list(user: AuthUser, facilityId?: string) {
     if (this.access.isSuperAdmin(user)) {
-      return this.members.find({ order: { createdAt: 'DESC' }, relations: { facility: true } as any, take: 500 });
+      return this.members.find({
+        where: facilityId ? { facilityId } : undefined,
+        order: { createdAt: 'DESC' },
+        relations: { facility: true } as any,
+        take: 500,
+      });
     }
 
     const scope = await this.access.getScope(user);
     if (scope.facilityIds.length === 0) return [];
 
+    const targetIds = facilityId
+      ? scope.facilityIds.filter((id) => id === facilityId)
+      : scope.facilityIds;
+
+    if (targetIds.length === 0) return [];
+
     return this.members.find({
-      where: { facilityId: In(scope.facilityIds) },
+      where: { facilityId: In(targetIds) },
       order: { createdAt: 'DESC' },
       relations: { facility: true } as any,
       take: 500,

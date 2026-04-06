@@ -18,8 +18,12 @@ export class PaymentsService {
     private readonly access: FacilityAccessService,
   ) {}
 
-  async list(user: AuthUser) {
+  async list(user: AuthUser, memberId?: string) {
+    const where: Record<string, unknown> = {};
+    if (memberId) where.memberId = memberId;
+
     const items = await this.payments.find({
+      where: Object.keys(where).length > 0 ? where : undefined,
       order: { createdAt: 'DESC' },
       relations: { member: { facility: true } } as any,
       take: 500,

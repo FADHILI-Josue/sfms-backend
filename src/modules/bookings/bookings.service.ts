@@ -27,9 +27,13 @@ export class BookingsService {
     private readonly access: FacilityAccessService,
   ) {}
 
-  async list(user: AuthUser) {
+  async list(user: AuthUser, facilityId?: string, memberId?: string) {
     if (this.access.isSuperAdmin(user)) {
+      const where: Record<string, unknown> = {};
+      if (facilityId) where.facilityId = facilityId;
+      if (memberId) where.memberId = memberId;
       return this.bookings.find({
+        where: Object.keys(where).length > 0 ? where : undefined,
         order: { startAt: 'DESC' },
         relations: { facility: true, member: true, court: true } as any,
         take: 500,
@@ -39,8 +43,17 @@ export class BookingsService {
     const scope = await this.access.getScope(user);
     if (scope.facilityIds.length === 0) return [];
 
+    const targetIds = facilityId
+      ? scope.facilityIds.filter((id) => id === facilityId)
+      : scope.facilityIds;
+
+    if (targetIds.length === 0) return [];
+
+    const where: Record<string, unknown> = { facilityId: In(targetIds) };
+    if (memberId) where.memberId = memberId;
+
     const items = await this.bookings.find({
-      where: { facilityId: In(scope.facilityIds) },
+      where,
       order: { startAt: 'DESC' },
       relations: { facility: true, member: true, court: true } as any,
       take: 500,

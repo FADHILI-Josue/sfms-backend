@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -16,8 +16,8 @@ export class MembershipsController {
 
   @Get()
   @Permissions('memberships.read')
-  list(@CurrentUser() user: AuthUser) {
-    return this.memberships.list(user);
+  list(@CurrentUser() user: AuthUser, @Query('facilityId') facilityId?: string) {
+    return this.memberships.list(user, facilityId);
   }
 
   @Post()
