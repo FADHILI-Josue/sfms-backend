@@ -6,6 +6,8 @@ import { RoleEntity } from '../access-control/entities/role.entity';
 import type { AuthUser } from '../auth/types/auth-user.type';
 import { UserEntity } from '../users/entities/user.entity';
 import { FacilityEntity } from './entities/facility.entity';
+import { CourtEntity } from './entities/court.entity';
+import { BookingEntity } from '../bookings/entities/booking.entity';
 import { CreateFacilityDto } from './dto/create-facility.dto';
 import {
   FacilityOwnerState,
@@ -16,8 +18,10 @@ import { UpdateFacilityDto } from './dto/update-facility.dto';
 import { FacilityApprovalStatus, FacilitySortField } from './facility.enums';
 import { FacilityAccessService } from './facility-access.service';
 
+export type EnrichedFacility = FacilityEntity & { courtsCapacity: number; courtsCount: number; bookingsCount: number };
+
 type PaginatedFacilitiesResult = {
-  items: FacilityEntity[];
+  items: EnrichedFacility[];
   total: number;
   page: number;
   pageSize: number;
@@ -38,6 +42,10 @@ export class FacilitiesService {
   constructor(
     @InjectRepository(FacilityEntity)
     private readonly facilities: Repository<FacilityEntity>,
+    @InjectRepository(CourtEntity)
+    private readonly courts: Repository<CourtEntity>,
+    @InjectRepository(BookingEntity)
+    private readonly bookings: Repository<BookingEntity>,
     @InjectRepository(UserEntity)
     private readonly users: Repository<UserEntity>,
     @InjectRepository(RoleEntity)
@@ -227,14 +235,55 @@ export class FacilitiesService {
 
     qb.skip((page - 1) * pageSize).take(pageSize);
 
-    const [items, total] = await qb.getManyAndCount();
+    const [raw, total] = await qb.getManyAndCount();
+
+    const facilityIds = raw.map((f) => f.id);
+    const enriched = await this.enrichWithCourtsAndBookings(raw, facilityIds);
+
     return {
-      items,
+      items: enriched,
       total,
       page,
       pageSize,
       totalPages: total === 0 ? 0 : Math.ceil(total / pageSize),
     };
+  }
+
+  private async enrichWithCourtsAndBookings(
+    items: FacilityEntity[],
+    facilityIds: string[],
+  ): Promise<EnrichedFacility[]> {
+    if (facilityIds.length === 0) return [];
+
+    const courtRows = await this.courts
+      .createQueryBuilder('court')
+      .select('court.facilityId', 'facilityId')
+      .addSelect('COALESCE(SUM(court.maxCapacity), 0)', 'courtsCapacity')
+      .addSelect('COUNT(*)', 'courtsCount')
+      .where('court.facilityId IN (:...ids)', { ids: facilityIds })
+      .andWhere('court.isActive = :active', { active: true })
+      .groupBy('court.facilityId')
+      .getRawMany<{ facilityId: string; courtsCapacity: string; courtsCount: string }>();
+
+    const bookingRows = await this.bookings
+      .createQueryBuilder('booking')
+      .select('booking.facilityId', 'facilityId')
+      .addSelect('COUNT(*)', 'bookingsCount')
+      .where('booking.facilityId IN (:...ids)', { ids: facilityIds })
+      .groupBy('booking.facilityId')
+      .getRawMany<{ facilityId: string; bookingsCount: string }>();
+
+    const capacityMap = new Map(courtRows.map((r) => [r.facilityId, Number(r.courtsCapacity)]));
+    const courtsCountMap = new Map(courtRows.map((r) => [r.facilityId, Number(r.courtsCount)]));
+    const bookingsMap = new Map(bookingRows.map((r) => [r.facilityId, Number(r.bookingsCount)]));
+
+    return items.map((f) =>
+      Object.assign(f, {
+        courtsCapacity: capacityMap.get(f.id) ?? 0,
+        courtsCount: courtsCountMap.get(f.id) ?? 0,
+        bookingsCount: bookingsMap.get(f.id) ?? 0,
+      }),
+    );
   }
 
   private applySort(
