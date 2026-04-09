@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 
 import type { AuthUser } from '../auth/types/auth-user.type';
 import { FacilityAccessService } from './facility-access.service';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { AuditCategory, AuditSeverity } from '../audit-logs/audit.enums';
 import { CourtEntity } from './entities/court.entity';
 import { FacilityEntity } from './entities/facility.entity';
 import { CreateCourtDto } from './dto/create-court.dto';
@@ -15,6 +17,7 @@ export class CourtsService {
     @InjectRepository(CourtEntity) private readonly courts: Repository<CourtEntity>,
     @InjectRepository(FacilityEntity) private readonly facilities: Repository<FacilityEntity>,
     private readonly access: FacilityAccessService,
+    private readonly audit: AuditLogsService,
   ) {}
 
   async listForFacility(user: AuthUser, facilityId: string) {
@@ -51,7 +54,17 @@ export class CourtsService {
       mainImage: dto.mainImage ?? null,
       metadata: dto.metadata ?? null,
     });
-    return this.courts.save(court);
+    const saved = await this.courts.save(court);
+    void this.audit.record({
+      action: 'COURT_CREATED',
+      category: AuditCategory.COURT,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Court',
+      targetId: saved.id,
+      details: { name: dto.name, facilityId },
+    });
+    return saved;
   }
 
   async get(user: AuthUser, id: string) {
@@ -77,12 +90,31 @@ export class CourtsService {
     if (dto.mainImage !== undefined) court.mainImage = dto.mainImage ?? null;
     if (dto.metadata !== undefined) court.metadata = dto.metadata ?? null;
 
-    return this.courts.save(court);
+    const updated = await this.courts.save(court);
+    void this.audit.record({
+      action: 'COURT_UPDATED',
+      category: AuditCategory.COURT,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Court',
+      targetId: id,
+      details: { changes: Object.keys(dto) },
+    });
+    return updated;
   }
 
   async delete(user: AuthUser, id: string) {
     await this.get(user, id);
     await this.courts.delete({ id });
+    void this.audit.record({
+      action: 'COURT_DELETED',
+      category: AuditCategory.COURT,
+      severity: AuditSeverity.WARNING,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Court',
+      targetId: id,
+    });
     return { ok: true };
   }
 }

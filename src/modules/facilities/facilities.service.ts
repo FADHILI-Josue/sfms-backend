@@ -17,6 +17,8 @@ import {
 import { UpdateFacilityDto } from './dto/update-facility.dto';
 import { FacilityApprovalStatus, FacilitySortField } from './facility.enums';
 import { FacilityAccessService } from './facility-access.service';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { AuditCategory, AuditSeverity } from '../audit-logs/audit.enums';
 
 export type EnrichedFacility = FacilityEntity & { courtsCapacity: number; courtsCount: number; bookingsCount: number };
 
@@ -51,6 +53,7 @@ export class FacilitiesService {
     @InjectRepository(RoleEntity)
     private readonly roles: Repository<RoleEntity>,
     private readonly access: FacilityAccessService,
+  private readonly audit: AuditLogsService,
   ) {}
 
   list(user: AuthUser, query: ListFacilitiesQueryDto): Promise<PaginatedFacilitiesResult> {
@@ -67,7 +70,7 @@ export class FacilitiesService {
     return facility;
   }
 
-  create(user: AuthUser, dto: CreateFacilityDto) {
+  async create(user: AuthUser, dto: CreateFacilityDto) {
     const isSuperAdmin = this.access.isSuperAdmin(user);
     const isFacilityOwner = (user.roles ?? []).includes('FACILITY_OWNER');
 
@@ -93,7 +96,17 @@ export class FacilitiesService {
       metadata: this.sanitizeMetadata(dto.metadata),
     });
 
-    return this.facilities.save(facility);
+    const saved = await this.facilities.save(facility);
+    void this.audit.record({
+      action: 'FACILITY_CREATED',
+      category: AuditCategory.FACILITY,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Facility',
+      targetId: saved.id,
+      details: { name: dto.name, type: dto.type, sports: dto.supportedSports },
+    });
+    return saved;
   }
 
   async update(user: AuthUser, id: string, dto: UpdateFacilityDto) {
@@ -114,7 +127,17 @@ export class FacilitiesService {
     if (dto.mainImage !== undefined) facility.mainImage = dto.mainImage ?? null;
     if (dto.metadata !== undefined) facility.metadata = this.sanitizeMetadata(dto.metadata);
 
-    return this.facilities.save(facility);
+    const updated = await this.facilities.save(facility);
+    void this.audit.record({
+      action: 'FACILITY_UPDATED',
+      category: AuditCategory.FACILITY,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Facility',
+      targetId: id,
+      details: { changes: Object.keys(dto) },
+    });
+    return updated;
   }
 
   async assignOwner(user: AuthUser, facilityId: string, ownerId: string) {
@@ -146,6 +169,15 @@ export class FacilitiesService {
     if (!this.access.isSuperAdmin(user)) throw new BadRequestException('Only SUPER_ADMIN can delete facilities.');
     await this.get(user, id);
     await this.facilities.delete({ id });
+    void this.audit.record({
+      action: 'FACILITY_DELETED',
+      category: AuditCategory.FACILITY,
+      severity: AuditSeverity.WARNING,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Facility',
+      targetId: id,
+    });
     return { ok: true };
   }
 
@@ -158,7 +190,17 @@ export class FacilitiesService {
     facility.approvedAt = new Date();
     facility.rejectionReason = null;
 
-    return this.facilities.save(facility);
+    const saved = await this.facilities.save(facility);
+    void this.audit.record({
+      action: 'FACILITY_APPROVED',
+      category: AuditCategory.FACILITY,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Facility',
+      targetId: id,
+      details: { name: facility.name },
+    });
+    return saved;
   }
 
   async reject(user: AuthUser, id: string, reason?: string) {
@@ -170,7 +212,18 @@ export class FacilitiesService {
     facility.approvedAt = new Date();
     facility.rejectionReason = reason?.trim() ? reason.trim() : null;
 
-    return this.facilities.save(facility);
+    const saved = await this.facilities.save(facility);
+    void this.audit.record({
+      action: 'FACILITY_REJECTED',
+      category: AuditCategory.FACILITY,
+      severity: AuditSeverity.WARNING,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Facility',
+      targetId: id,
+      details: { name: facility.name, reason: reason ?? null },
+    });
+    return saved;
   }
 
   listPublic(query: ListFacilitiesQueryDto): Promise<PaginatedFacilitiesResult> {

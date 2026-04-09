@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 
 import type { AuthUser } from '../auth/types/auth-user.type';
 import { FacilityAccessService } from '../facilities/facility-access.service';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { AuditCategory, AuditSeverity } from '../audit-logs/audit.enums';
 import { MemberEntity } from '../memberships/entities/member.entity';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
@@ -16,6 +18,7 @@ export class PaymentsService {
     @InjectRepository(PaymentEntity) private readonly payments: Repository<PaymentEntity>,
     @InjectRepository(MemberEntity) private readonly members: Repository<MemberEntity>,
     private readonly access: FacilityAccessService,
+    private readonly audit: AuditLogsService,
   ) {}
 
   async list(user: AuthUser, memberId?: string) {
@@ -82,7 +85,17 @@ export class PaymentsService {
       reference: dto.reference ?? null,
     });
 
-    return this.payments.save(payment);
+    const saved = await this.payments.save(payment);
+    void this.audit.record({
+      action: 'PAYMENT_RECORDED',
+      category: AuditCategory.PAYMENT,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Payment',
+      targetId: saved.id,
+      details: { memberId: dto.memberId, amountDueCents: dto.amountDueCents, method: dto.method, status: saved.status },
+    });
+    return saved;
   }
 
   async update(user: AuthUser, id: string, dto: UpdatePaymentDto) {
@@ -107,12 +120,31 @@ export class PaymentsService {
     if (dto.paidAt !== undefined) payment.paidAt = dto.paidAt ?? null;
     if (dto.reference !== undefined) payment.reference = dto.reference ?? null;
 
-    return this.payments.save(payment);
+    const updated = await this.payments.save(payment);
+    void this.audit.record({
+      action: 'PAYMENT_UPDATED',
+      category: AuditCategory.PAYMENT,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Payment',
+      targetId: id,
+      details: { changes: Object.keys(dto) },
+    });
+    return updated;
   }
 
   async delete(user: AuthUser, id: string) {
     await this.get(user, id);
     await this.payments.delete({ id });
+    void this.audit.record({
+      action: 'PAYMENT_DELETED',
+      category: AuditCategory.PAYMENT,
+      severity: AuditSeverity.WARNING,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Payment',
+      targetId: id,
+    });
     return { ok: true };
   }
 }

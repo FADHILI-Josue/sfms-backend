@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { Permissions } from '../../common/decorators/permissions.decorator';
@@ -12,7 +12,21 @@ export class AuditLogsController {
 
   @Get()
   @Permissions('audit.read')
-  list() {
-    return this.audit.list();
+  list(
+    @Query('category') category?: string,
+    @Query('severity') severity?: string,
+    @Query('search') search?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.audit.list({
+      category,
+      severity,
+      search,
+      dateFrom,
+      dateTo,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 }

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { RoleEntity } from '../access-control/entities/role.entity';
+import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { UserEntity } from '../users/entities/user.entity';
 import { BookingEntity } from '../bookings/entities/booking.entity';
 import { FacilityEntity } from './entities/facility.entity';
@@ -25,6 +26,7 @@ import { FacilityStaffService } from './facility-staff.service';
       UserEntity,
       RoleEntity,
     ]),
+    AuditLogsModule,
   ],
   controllers: [FacilitiesController, PublicFacilitiesController, CourtsController, PublicCourtsController, FacilityStaffController],
   providers: [FacilitiesService, FacilityAccessService, CourtsService, FacilityStaffService],

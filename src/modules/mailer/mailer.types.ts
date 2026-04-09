@@ -60,6 +60,8 @@ export type FacilityApplicationApprovedTemplateData = {
   customerName: string;
   facilityName: string;
   dashboardUrl: string;
+  loginEmail?: string;
+  temporaryPassword?: string;
   publicListingUrl?: string;
   supportEmail?: string;
 };

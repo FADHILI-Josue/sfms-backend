@@ -206,6 +206,18 @@ export function buildFacilityApplicationApprovedTemplate(
       'Great news. Your facility registration has been approved. We know how much work goes into getting a venue ready, and we are happy to welcome you officially.',
     bodyHtml: `
       <p style="margin:0 0 18px"><strong>${escapeHtml(data.facilityName)}</strong> is now approved in SFMS.</p>
+      ${
+        data.loginEmail && data.temporaryPassword
+          ? `<table style="width:100%;border-collapse:collapse;margin:0 0 24px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
+              <tr><td style="padding:16px 20px">
+                <p style="margin:0 0 10px;font-weight:700;color:#0f172a">Your login credentials</p>
+                <p style="margin:0 0 6px;color:#475569">Email: <strong style="color:#0f172a">${escapeHtml(data.loginEmail)}</strong></p>
+                <p style="margin:0;color:#475569">Temporary password: <strong style="color:#0f172a;font-family:monospace">${escapeHtml(data.temporaryPassword)}</strong></p>
+                <p style="margin:10px 0 0;font-size:13px;color:#94a3b8">Please change your password after your first login.</p>
+              </td></tr>
+             </table>`
+          : ''
+      }
       <div style="margin:0 0 24px">${button('Open your dashboard', data.dashboardUrl)}</div>
       ${
         data.publicListingUrl
@@ -220,6 +232,9 @@ export function buildFacilityApplicationApprovedTemplate(
     `Hello ${data.customerName},`,
     '',
     `Your facility registration for ${data.facilityName} has been approved.`,
+    data.loginEmail && data.temporaryPassword
+      ? `Login email: ${data.loginEmail}\nTemporary password: ${data.temporaryPassword}\n(Please change your password after first login.)`
+      : '',
     `Open dashboard: ${data.dashboardUrl}`,
     data.publicListingUrl ? `Public listing: ${data.publicListingUrl}` : '',
     data.supportEmail ? `Need help? Contact ${data.supportEmail}.` : '',

@@ -26,6 +26,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { FacilityApplicationsModule } from './modules/facility-applications/facility-applications.module';
 import { MailerModule } from './modules/mailer/mailer.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { ServicesModule } from './modules/services/services.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 
@@ -83,6 +84,7 @@ import { PermissionsGuard } from './common/guards/permissions.guard';
     FacilityApplicationsModule,
     MailerModule,
     StorageModule,
+    ServicesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

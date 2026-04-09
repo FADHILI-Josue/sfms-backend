@@ -4,6 +4,8 @@ import { In, Repository } from 'typeorm';
 
 import type { AuthUser } from '../auth/types/auth-user.type';
 import { FacilityAccessService } from '../facilities/facility-access.service';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { AuditCategory, AuditSeverity } from '../audit-logs/audit.enums';
 import { FacilityEntity } from '../facilities/entities/facility.entity';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
@@ -15,6 +17,7 @@ export class MembershipsService {
     @InjectRepository(MemberEntity) private readonly members: Repository<MemberEntity>,
     @InjectRepository(FacilityEntity) private readonly facilities: Repository<FacilityEntity>,
     private readonly access: FacilityAccessService,
+    private readonly audit: AuditLogsService,
   ) {}
 
   async list(user: AuthUser, facilityId?: string) {
@@ -79,7 +82,17 @@ export class MembershipsService {
       facilityId: dto.facilityId ?? null,
     });
 
-    return this.members.save(member);
+    const saved = await this.members.save(member);
+    void this.audit.record({
+      action: 'MEMBER_CREATED',
+      category: AuditCategory.MEMBER,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Member',
+      targetId: saved.id,
+      details: { name: dto.name, category: dto.category, sport: dto.sport, facilityId: dto.facilityId },
+    });
+    return saved;
   }
 
   async update(user: AuthUser, id: string, dto: UpdateMemberDto) {
@@ -104,12 +117,31 @@ export class MembershipsService {
     if (dto.digitalCardId !== undefined) member.digitalCardId = dto.digitalCardId ?? null;
     if (dto.facilityId !== undefined) member.facilityId = dto.facilityId ?? null;
 
-    return this.members.save(member);
+    const updated = await this.members.save(member);
+    void this.audit.record({
+      action: 'MEMBER_UPDATED',
+      category: AuditCategory.MEMBER,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Member',
+      targetId: id,
+      details: { changes: Object.keys(dto) },
+    });
+    return updated;
   }
 
   async delete(user: AuthUser, id: string) {
     await this.get(user, id);
     await this.members.delete({ id });
+    void this.audit.record({
+      action: 'MEMBER_DELETED',
+      category: AuditCategory.MEMBER,
+      severity: AuditSeverity.WARNING,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Member',
+      targetId: id,
+    });
     return { ok: true };
   }
 }

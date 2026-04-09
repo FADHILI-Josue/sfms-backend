@@ -12,6 +12,8 @@ import type { JwtPayload } from './types/jwt-payload.type';
 import { LoginDto } from './dto/login.dto';
 import { RegisterFacilityDto } from './dto/register-facility.dto';
 import { hashSecret, verifySecret } from '../../common/security/password-hasher';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { AuditCategory } from '../audit-logs/audit.enums';
 import { FacilityApprovalStatus, FacilityStatus, FacilityType } from '../facilities/facility.enums';
 
 @Injectable()
@@ -24,6 +26,7 @@ export class AuthService {
     @InjectRepository(FacilityEntity) private readonly facilities: Repository<FacilityEntity>,
     @InjectRepository(FacilityStaffEntity) private readonly staff: Repository<FacilityStaffEntity>,
     @InjectRepository(RoleEntity) private readonly roles: Repository<RoleEntity>,
+    private readonly audit: AuditLogsService,
   ) {}
 
   async registerFacility(dto: RegisterFacilityDto) {
@@ -72,6 +75,16 @@ export class AuthService {
         relations: { roles: { permissions: true } } as any,
       });
 
+      void this.audit.record({
+        action: 'FACILITY_REGISTRATION_SUBMITTED',
+        category: AuditCategory.APPLICATION,
+        actorId: savedUser.id,
+        actorName: `${dto.firstName} ${dto.lastName}`,
+        targetType: 'FacilityRegistration',
+        targetId: savedUser.id,
+        details: { facilityName: dto.facilityName, email: dto.email },
+      });
+
       return this.issueTokens(reloadedUser!);
     } catch (err) {
       await queryRunner.rollbackTransaction();
@@ -94,6 +107,16 @@ export class AuthService {
 
     user.lastLoginAt = new Date();
     await this.users.save(user);
+
+    void this.audit.record({
+      action: 'USER_LOGIN',
+      category: AuditCategory.AUTH,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'User',
+      targetId: user.id,
+      details: { email: user.email, roles: (user.roles ?? []).map((r: any) => r.name) },
+    });
 
     return this.issueTokens(user);
   }
@@ -123,7 +146,16 @@ export class AuthService {
   }
 
   async logout(userId: string) {
+    const user = await this.users.findOne({ where: { id: userId } });
     await this.users.update({ id: userId }, { refreshTokenHash: null });
+    void this.audit.record({
+      action: 'USER_LOGOUT',
+      category: AuditCategory.AUTH,
+      actorId: userId,
+      actorName: user?.fullName ?? null,
+      targetType: 'User',
+      targetId: userId,
+    });
     return { ok: true };
   }
 

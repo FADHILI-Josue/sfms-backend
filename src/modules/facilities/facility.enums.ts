@@ -1,6 +1,7 @@
 export enum FacilityType {
   INDOOR = 'INDOOR',
   OUTDOOR = 'OUTDOOR',
+  BOTH = 'BOTH',
 }
 
 export enum FacilitySport {

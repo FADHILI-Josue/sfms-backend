@@ -15,6 +15,8 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreatePublicBookingDto } from './dto/create-public-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import type { AuthUser } from '../auth/types/auth-user.type';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { AuditCategory, AuditSeverity } from '../audit-logs/audit.enums';
 
 @Injectable()
 export class BookingsService {
@@ -25,6 +27,7 @@ export class BookingsService {
     @InjectRepository(MemberEntity) private readonly members: Repository<MemberEntity>,
     @InjectRepository(PaymentEntity) private readonly payments: Repository<PaymentEntity>,
     private readonly access: FacilityAccessService,
+    private readonly audit: AuditLogsService,
   ) {}
 
   async list(user: AuthUser, facilityId?: string, memberId?: string) {
@@ -119,7 +122,17 @@ export class BookingsService {
       notes: dto.notes ?? null,
     });
 
-    return this.bookings.save(booking);
+    const saved = await this.bookings.save(booking);
+    void this.audit.record({
+      action: 'BOOKING_CREATED',
+      category: AuditCategory.BOOKING,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Booking',
+      targetId: saved.id,
+      details: { facilityId: dto.facilityId, memberId: dto.memberId, type: dto.type, startAt: dto.startAt, endAt: dto.endAt },
+    });
+    return saved;
   }
 
   async createPublic(dto: CreatePublicBookingDto) {
@@ -158,6 +171,15 @@ export class BookingsService {
       notes: dto.notes ?? null,
     });
     const savedBooking = await this.bookings.save(booking);
+    void this.audit.record({
+      action: 'PUBLIC_BOOKING_CREATED',
+      category: AuditCategory.BOOKING,
+      actorId: null,
+      actorName: dto.guestName,
+      targetType: 'Booking',
+      targetId: savedBooking.id,
+      details: { facilityId: dto.facilityId, guestName: dto.guestName, type: dto.type, startAt: dto.startAt, endAt: dto.endAt },
+    });
 
     const payment = this.payments.create({
       memberId: savedMember.id,
@@ -196,12 +218,31 @@ export class BookingsService {
     if (dto.recurrence !== undefined) booking.recurrence = dto.recurrence;
     if (dto.notes !== undefined) booking.notes = dto.notes ?? null;
 
-    return this.bookings.save(booking);
+    const updated = await this.bookings.save(booking);
+    void this.audit.record({
+      action: 'BOOKING_UPDATED',
+      category: AuditCategory.BOOKING,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Booking',
+      targetId: id,
+      details: { changes: Object.keys(dto) },
+    });
+    return updated;
   }
 
   async delete(user: AuthUser, id: string) {
     await this.get(user, id);
     await this.bookings.delete({ id });
+    void this.audit.record({
+      action: 'BOOKING_DELETED',
+      category: AuditCategory.BOOKING,
+      severity: AuditSeverity.WARNING,
+      actorId: user.id,
+      actorName: user.fullName,
+      targetType: 'Booking',
+      targetId: id,
+    });
     return { ok: true };
   }
 

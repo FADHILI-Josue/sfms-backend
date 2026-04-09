@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { FacilitiesModule } from '../facilities/facilities.module';
+import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { CourtEntity } from '../facilities/entities/court.entity';
 import { FacilityEntity } from '../facilities/entities/facility.entity';
 import { MemberEntity } from '../memberships/entities/member.entity';
@@ -14,6 +15,7 @@ import { BookingsService } from './bookings.service';
   imports: [
     TypeOrmModule.forFeature([BookingEntity, FacilityEntity, CourtEntity, MemberEntity, PaymentEntity]),
     FacilitiesModule,
+    AuditLogsModule,
   ],
   controllers: [BookingsController, PublicBookingsController],
   providers: [BookingsService],

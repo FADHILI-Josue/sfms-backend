@@ -2,7 +2,7 @@ import { Column, Entity, Index, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { UserEntity } from '../../users/entities/user.entity';
-import { AuditSeverity } from '../audit.enums';
+import { AuditCategory, AuditSeverity } from '../audit.enums';
 
 @Entity({ name: 'audit_logs' })
 export class AuditLogEntity extends BaseEntity {
@@ -10,13 +10,23 @@ export class AuditLogEntity extends BaseEntity {
   @Index()
   action!: string;
 
+  @Column({ type: 'varchar', length: 60, nullable: true })
+  @Index()
+  category!: string | null;
+
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   actor!: UserEntity | null;
 
   @Column({ type: 'uuid', nullable: true })
+  @Index()
   actorId!: string | null;
 
+  /** Denormalized: preserved even if actor user is deleted */
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  actorName!: string | null;
+
   @Column({ type: 'varchar', length: 120, nullable: true })
+  @Index()
   targetType!: string | null;
 
   @Column({ type: 'varchar', length: 120, nullable: true })

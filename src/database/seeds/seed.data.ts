@@ -47,6 +47,11 @@ export const permissionKeys = [
 
   'audit.read',
   'analytics.read',
+
+  'services.read',
+  'services.create',
+  'services.update',
+  'services.delete',
 ] as const;
 
 export const systemRoles = [
@@ -78,6 +83,10 @@ export const systemRoles = [
       'payments.create',
       'payments.update',
       'analytics.read',
+      'services.read',
+      'services.create',
+      'services.update',
+      'services.delete',
     ],
   },
   {
@@ -94,6 +103,10 @@ export const systemRoles = [
       'bookings.update',
       'memberships.read',
       'analytics.read',
+      'services.read',
+      'services.create',
+      'services.update',
+      'services.delete',
     ],
   },
   {
@@ -114,6 +127,10 @@ export const systemRoles = [
       'memberships.update',
       'analytics.read',
       'audit.read',
+      'services.read',
+      'services.create',
+      'services.update',
+      'services.delete',
     ],
   },
   {
@@ -129,6 +146,6 @@ export const systemRoles = [
   {
     name: 'SERVICE_PROVIDER',
     description: 'External service provider.',
-    permissionKeys: ['bookings.read', 'facilities.read'],
+    permissionKeys: ['bookings.read', 'facilities.read', 'services.read', 'services.create', 'services.update', 'services.delete'],
   },
 ] as const;

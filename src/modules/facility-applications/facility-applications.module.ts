@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { RoleEntity } from '../access-control/entities/role.entity';
+import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { FacilityEntity } from '../facilities/entities/facility.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { FacilityApplicationEntity } from './entities/facility-application.entity';
@@ -13,15 +14,10 @@ import { FacilityApplicationsService } from './facility-applications.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      FacilityApplicationEntity,
-      UserEntity,
-      RoleEntity,
-      FacilityEntity,
-    ]),
+    TypeOrmModule.forFeature([FacilityApplicationEntity, UserEntity, RoleEntity, FacilityEntity]),
+    AuditLogsModule,
   ],
   controllers: [PublicFacilityApplicationsController, FacilityApplicationsController],
   providers: [FacilityApplicationsService],
 })
 export class FacilityApplicationsModule {}
-
