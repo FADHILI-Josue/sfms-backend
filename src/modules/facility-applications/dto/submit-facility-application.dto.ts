@@ -76,5 +76,11 @@ export class SubmitFacilityApplicationDto {
   @IsString()
   @Length(0, 800)
   description?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  imageUrls?: string[];
 }
 

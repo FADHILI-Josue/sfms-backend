@@ -49,6 +49,7 @@ export class FacilityApplicationsService {
       dimensions: dto.dimensions?.trim() ? dto.dimensions.trim() : null,
       amenities: dto.amenities?.trim() ? dto.amenities.trim() : null,
       description: dto.description?.trim() ? dto.description.trim() : null,
+      imageUrls: dto.imageUrls && dto.imageUrls.length > 0 ? dto.imageUrls : null,
       status: FacilityApplicationStatus.PENDING,
       decidedById: null,
       decisionReason: null,

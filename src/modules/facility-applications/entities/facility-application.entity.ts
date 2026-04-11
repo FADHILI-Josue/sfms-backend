@@ -43,6 +43,9 @@ export class FacilityApplicationEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 800, nullable: true })
   description!: string | null;
 
+  @Column({ type: 'simple-array', nullable: true })
+  imageUrls!: string[] | null;
+
   @Column({ type: 'simple-enum', enum: FacilityApplicationStatus, default: FacilityApplicationStatus.PENDING })
   status!: FacilityApplicationStatus;
 
